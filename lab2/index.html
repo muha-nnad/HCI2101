@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة XO الحديثة - مهند النمري</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --x-color: #ff4d4d;
+            --o-color: #00d2ff;
+            --text-color: #2d3436;
+            --bg-color: #f0f2f5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #4834d4;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-mode {
+            background: white;
+            color: var(--text-color);
+        }
+
+        .btn-mode.active {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            padding: 10px 30px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            color: var(--text-color);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .cell:hover {
+            background: #eef2f3;
+            transform: scale(1.02);
+        }
+
+        .cell.x { color: var(--x-color); }
+        .cell.o { color: var(--o-color); }
+
+        .cell.winner {
+            background: #dff9fb;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .reset-btn {
+            margin-top: 30px;
+            background: #eb4d4b;
+            color: white;
+            padding: 12px 40px;
+            font-size: 1.1rem;
+        }
+
+        footer {
+            width: 100%;
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.95rem;
+            border-top: 4px solid #6c5ce7;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 400px) {
+            .board {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+            }
+            .cell { width: 80px; height: 80px; font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>إكس أو (XO)</h1>
+
+        <div class="game-controls">
+            <button id="singlePlayerBtn" class="btn btn-mode active" onclick="setMode('single')">ضد الكمبيوتر</button>
+            <button id="multiPlayerBtn" class="btn btn-mode" onclick="setMode('multi')">لاعبين</button>
+        </div>
+
+        <div class="status" id="statusText">بدء اللعب: دور X</div>
+
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <button class="btn reset-btn" onclick="resetGame()">إعادة التعيين</button>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <span>Student Name: MUHANNAD AlNEMARI</span>
+            <span>ID: 446006020</span>
+            <span>Supervised by: Mohammed Jabali</span>
+        </div>
+    </footer>
+
+    <script>
+        const boardElement = document.getElementById('board');
+        const cells = document.querySelectorAll('.cell');
+        const statusText = document.getElementById('statusText');
+        const singleBtn = document.getElementById('singlePlayerBtn');
+        const multiBtn = document.getElementById('multiPlayerBtn');
+
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let currentPlayer = "X";
+        let isGameActive = true;
+        let isVsComputer = true;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function setMode(mode) {
+            isVsComputer = (mode === 'single');
+            singleBtn.classList.toggle('active', isVsComputer);
+            multiBtn.classList.toggle('active', !isVsComputer);
+            resetGame();
+        }
+
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (board[clickedCellIndex] !== "" || !isGameActive) return;
+
+            makeMove(clickedCellIndex, currentPlayer);
+            
+            if (isGameActive && isVsComputer && currentPlayer === "O") {
+                boardElement.style.pointerEvents = 'none';
+                setTimeout(computerMove, 600);
+            }
+        }
+
+        function makeMove(index, player) {
+            board[index] = player;
+            cells[index].innerText = player;
+            cells[index].classList.add(player.toLowerCase());
+            
+            checkResult();
+            if (isGameActive) {
+                currentPlayer = currentPlayer === "X" ? "O" : "X";
+                statusText.innerText = `دور اللاعب ${currentPlayer}`;
+            }
+        }
+
+        function computerMove() {
+            let availableIndices = board.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+            if (availableIndices.length > 0) {
+                // ذكاء اصطناعي بسيط: اختيار عشوائي من المربعات الفارغة
+                const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+                makeMove(randomIndex, "O");
+            }
+            boardElement.style.pointerEvents = 'auto';
+        }
+
+        function checkResult() {
+            let roundWon = false;
+            let winningLine = [];
+
+            for (let i = 0; i <= 7; i++) {
+                const winCondition = winningConditions[i];
+                let a = board[winCondition[0]];
+                let b = board[winCondition[1]];
+                let c = board[winCondition[2]];
+                if (a === '' || b === '' || c === '') continue;
+                if (a === b && b === c) {
+                    roundWon = true;
+                    winningLine = winCondition;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusText.innerText = `مبروك! الفائز هو ${currentPlayer}`;
+                statusText.style.color = "#27ae60";
+                winningLine.forEach(idx => cells[idx].classList.add('winner'));
+                isGameActive = false;
+                return;
+            }
+
+            if (!board.includes("")) {
+                statusText.innerText = "تعادل!";
+                isGameActive = false;
+                return;
+            }
+        }
+
+        function resetGame() {
+            board = ["", "", "", "", "", "", "", "", ""];
+            currentPlayer = "X";
+            isGameActive = true;
+            statusText.innerText = "بدء اللعب: دور X";
+            statusText.style.color = "var(--text-color)";
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.classList.remove('x', 'o', 'winner');
+            });
+            boardElement.style.pointerEvents = 'auto';
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    </script>
+</body>
+</html>
